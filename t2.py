@@ -94,6 +94,16 @@ def crossover(pai, mae):
     return filho1, filho2
 
 
+def mutacao(alocacao):
+    idx1, idx2 = random.sample(range(len(alocacao)), 2)
+
+    aluno_a1, aluno_b1 = alocacao[idx1]
+    aluno_a2, aluno_b2 = alocacao[idx2]
+
+    alocacao[idx1] = (aluno_a1, aluno_b2)
+    alocacao[idx2] = (aluno_a2, aluno_b1)
+
+
 def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b):
     losses = funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
     new_matriz = copy.deepcopy(matriz_alocacao)
@@ -111,4 +121,6 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b):
     mostrar(new_matriz, losses)
 
 
-resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b)
+print(matriz_alocacao[0])
+mutacao(matriz_alocacao[0])
+print(matriz_alocacao[0])
