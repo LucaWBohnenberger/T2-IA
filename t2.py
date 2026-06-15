@@ -45,8 +45,6 @@ for _ in range(10):
         alocacao.append((val1, val2))
     matriz_alocacao.append(alocacao)
 
-losses = funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
-
 
 def mostrar(matriz_alocacao, losses):
     print()
@@ -56,11 +54,8 @@ def mostrar(matriz_alocacao, losses):
         print(new[i])
 
 
-mostrar(matriz_alocacao, losses)
-
-
 def elitismo(matriz_alocacao, losses):
-    index = losses.index(max(losses))
+    index = losses.index(min(losses))
 
     return copy.deepcopy(matriz_alocacao[index])
 
@@ -72,10 +67,6 @@ def torneio(matriz_alocacao, losses):
         return copy.deepcopy(matriz_alocacao[index1])
     else:
         return copy.deepcopy(matriz_alocacao[index2])
-
-
-pai = torneio(matriz_alocacao, losses)
-mae = torneio(matriz_alocacao, losses)
 
 
 # Pensar com mais calma em como fazer o crossover
@@ -103,13 +94,21 @@ def crossover(pai, mae):
     return filho1, filho2
 
 
-print()
-print(pai)
-print(mae)
-f1, f2 = crossover(pai, mae)
-print(f1)
-print(f2)
+def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b):
+    losses = funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
+    new_matriz = copy.deepcopy(matriz_alocacao)
+    melhor = elitismo(matriz_alocacao, losses)
+    new_matriz[0] = melhor
+    um = torneio(matriz_alocacao, losses)
+    new_matriz[1] = um
+    for i in range(2, 10, 2):
+        pai = torneio(matriz_alocacao, losses)
+        mae = torneio(matriz_alocacao, losses)
+        f1, f2 = crossover(pai, mae)
+        new_matriz[i] = f1
+        new_matriz[i + 1] = f2
+    losses = funcao_heuristica(new_matriz, matriz_escola_a, matriz_escola_b)
+    mostrar(new_matriz, losses)
 
 
-def resolver(alocacao, matriz_escola_a, matriz_escola_b):
-    return
+resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b)
