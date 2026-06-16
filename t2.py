@@ -18,7 +18,6 @@ matriz_escola_b = [
 n = 4
 lista = [i for i in range(1, n + 1)]
 lista2 = [i for i in range(1, n + 1)]
-print(lista)
 
 
 def funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b):
@@ -104,23 +103,41 @@ def mutacao(alocacao):
     alocacao[idx2] = (aluno_a2, aluno_b1)
 
 
-def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b):
+def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
     losses = funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
     new_matriz = copy.deepcopy(matriz_alocacao)
+
     melhor = elitismo(matriz_alocacao, losses)
     new_matriz[0] = melhor
     um = torneio(matriz_alocacao, losses)
     new_matriz[1] = um
+
     for i in range(2, 10, 2):
         pai = torneio(matriz_alocacao, losses)
         mae = torneio(matriz_alocacao, losses)
         f1, f2 = crossover(pai, mae)
         new_matriz[i] = f1
         new_matriz[i + 1] = f2
-    losses = funcao_heuristica(new_matriz, matriz_escola_a, matriz_escola_b)
-    mostrar(new_matriz, losses)
+
+    for i in range(1, len(new_matriz)):
+        if chance_mutacao <= random.uniform(0, 1):
+            mutacao(new_matriz[i])
+
+    return new_matriz
 
 
-print(matriz_alocacao[0])
-mutacao(matriz_alocacao[0])
-print(matriz_alocacao[0])
+if __name__ == "__main__":
+    geracaoes = 100
+    print("Geração 0:")
+    mostrar(
+        matriz_alocacao,
+        funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
+    )
+    for i in range(1, geracaoes):
+        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.3)
+        print(f"Geração {i}:")
+        mostrar(
+            matriz, funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
+        )
+        print()
+        matriz_alocacao = matriz
