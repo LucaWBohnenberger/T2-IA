@@ -62,7 +62,7 @@ def elitismo(matriz_alocacao, losses):
 def torneio(matriz_alocacao, losses):
     lista = [i for i in range(1, 10)]
     index1, index2 = random.sample(lista, 2)
-    if losses[index1] > losses[index2]:
+    if losses[index1] < losses[index2]:
         return copy.deepcopy(matriz_alocacao[index1])
     else:
         return copy.deepcopy(matriz_alocacao[index2])
@@ -120,24 +120,22 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
         new_matriz[i + 1] = f2
 
     for i in range(1, len(new_matriz)):
-        if chance_mutacao <= random.uniform(0, 1):
+        if chance_mutacao > random.uniform(0, 1):
             mutacao(new_matriz[i])
 
     return new_matriz
 
 
 if __name__ == "__main__":
-    geracaoes = 100
+    geracaoes = 10
     print("Geração 0:")
     mostrar(
         matriz_alocacao,
         funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
     )
     for i in range(1, geracaoes):
-        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.3)
+        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.10)
         print(f"Geração {i}:")
-        mostrar(
-            matriz, funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
-        )
+        mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
         print()
         matriz_alocacao = matriz
