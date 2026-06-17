@@ -1,21 +1,21 @@
 import random
 import copy
+import sys
+from pathlib import Path
 
-matriz_escola_a = [
-    [1, 2, 4, 3],  # Preferências do aluno A1
-    [2, 3, 1, 4],  # Preferências do aluno A2
-    [4, 1, 3, 2],  # Preferências do aluno A3
-    [3, 1, 2, 4],  # Preferências do aluno A4
-]
+caminho = Path(sys.argv[1])
 
-matriz_escola_b = [
-    [3, 2, 4, 1],  # Preferências do aluno B1
-    [3, 2, 4, 1],  # Preferências do aluno B2
-    [2, 4, 3, 1],  # Preferências do aluno B3
-    [1, 3, 4, 2],  # Preferências do aluno B4
-]
+matriz_escola_a = []
+matriz_escola_b = []
 
-n = 4
+with open(caminho, "r") as f:
+    n = int(f.readline())
+    for i in range(n):
+        matriz_escola_a.append(list(map(int, f.readline().split())))
+    for i in range(n):
+        matriz_escola_b.append(list(map(int, f.readline().split())))
+
+
 lista = [i for i in range(1, n + 1)]
 lista2 = [i for i in range(1, n + 1)]
 
@@ -127,14 +127,14 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
 
 
 if __name__ == "__main__":
-    geracaoes = 10
+    geracaoes = 500
     print("Geração 0:")
     mostrar(
         matriz_alocacao,
         funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
     )
     for i in range(1, geracaoes):
-        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.10)
+        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.15)
         print(f"Geração {i}:")
         mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
         print()
