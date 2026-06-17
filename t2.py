@@ -11,9 +11,13 @@ matriz_escola_b = []
 with open(caminho, "r") as f:
     n = int(f.readline())
     for i in range(n):
-        matriz_escola_a.append(list(map(int, f.readline().split())))
+        matriz_escola_a.append(list(map(int, f.readline().split()[1:])))
     for i in range(n):
-        matriz_escola_b.append(list(map(int, f.readline().split())))
+        matriz_escola_b.append(list(map(int, f.readline().split()[1:])))
+
+
+print(matriz_escola_a)
+print(matriz_escola_b)
 
 
 lista = [i for i in range(1, n + 1)]
@@ -127,14 +131,14 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
 
 
 if __name__ == "__main__":
-    geracaoes = 500
+    geracaoes = 10054
     print("Geração 0:")
     mostrar(
         matriz_alocacao,
         funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
     )
     for i in range(1, geracaoes):
-        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.15)
+        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.2)
         print(f"Geração {i}:")
         mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
         print()
