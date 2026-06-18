@@ -5,6 +5,8 @@ from pathlib import Path
 
 caminho = Path(sys.argv[1])
 
+tamanho_populacao = 50
+
 matriz_escola_a = []
 matriz_escola_b = []
 
@@ -36,7 +38,7 @@ def funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b):
 
 
 matriz_alocacao = []
-for _ in range(10):
+for _ in range(tamanho_populacao):
     lista = [i for i in range(1, n + 1)]
     lista2 = [i for i in range(1, n + 1)]
     alocacao = []
@@ -64,7 +66,7 @@ def elitismo(matriz_alocacao, losses):
 
 
 def torneio(matriz_alocacao, losses):
-    lista = [i for i in range(1, 10)]
+    lista = [i for i in range(0, tamanho_populacao)]
     index1, index2 = random.sample(lista, 2)
     if losses[index1] < losses[index2]:
         return copy.deepcopy(matriz_alocacao[index1])
@@ -116,7 +118,7 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
     um = torneio(matriz_alocacao, losses)
     new_matriz[1] = um
 
-    for i in range(2, 10, 2):
+    for i in range(2, tamanho_populacao, 2):
         pai = torneio(matriz_alocacao, losses)
         mae = torneio(matriz_alocacao, losses)
         f1, f2 = crossover(pai, mae)
@@ -131,14 +133,14 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
 
 
 if __name__ == "__main__":
-    geracaoes = 10054
+    geracaoes = 100
     print("Geração 0:")
     mostrar(
         matriz_alocacao,
         funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
     )
     for i in range(1, geracaoes):
-        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.2)
+        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
         print(f"Geração {i}:")
         mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
         print()
