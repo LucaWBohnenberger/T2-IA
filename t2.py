@@ -17,11 +17,6 @@ with open(caminho, "r") as f:
     for i in range(n):
         matriz_escola_b.append(list(map(int, f.readline().split()[1:])))
 
-
-print(matriz_escola_a)
-print(matriz_escola_b)
-
-
 lista = [i for i in range(1, n + 1)]
 lista2 = [i for i in range(1, n + 1)]
 
@@ -132,16 +127,39 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
     return new_matriz
 
 
+# def avaliacao(matriz_alocacao, losses):
+
+
 if __name__ == "__main__":
     geracaoes = 100
-    print("Geração 0:")
-    mostrar(
-        matriz_alocacao,
-        funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
-    )
-    for i in range(1, geracaoes):
-        matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
-        print(f"Geração {i}:")
-        mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
-        print()
-        matriz_alocacao = matriz
+    try:
+        modo = sys.argv[2]
+    except:
+        modo = ""
+
+    if modo == "pausado":
+        print("Geração 0:")
+        mostrar(
+            matriz_alocacao,
+            funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
+        )
+        input()
+        for i in range(1, geracaoes):
+            matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
+            print(f"Geração {i}:")
+            mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
+            print()
+            matriz_alocacao = matriz
+            input()
+    else:
+        print("Geração 0:")
+        mostrar(
+            matriz_alocacao,
+            funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
+        )
+        for i in range(1, geracaoes):
+            matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
+            print(f"Geração {i}:")
+            mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
+            print()
+            matriz_alocacao = matriz
