@@ -29,7 +29,7 @@ for i in range(n):
         rank_b[i][aluno] = j
 
 
-tamanho_populacao = 50 * n
+tamanho_populacao = 75 * n
 
 
 matriz_alocacao = []
@@ -103,10 +103,6 @@ def crossover(pai, mae):
     3) Após percorrer todos os alunos, alguns parceiros da escola B ainda
        estarão livres. Eles são distribuídos aleatoriamente entre os alunos
        pendentes.
-
-    O resultado final é sempre um matching válido (cada aluno aparece
-    exatamente uma vez em cada lado) e preserva muito mais informação útil
-    dos pais do que operadores como PMX.
     """
 
     mapa_pai = dict(pai)
@@ -242,7 +238,7 @@ if __name__ == "__main__":
             geracoes_sem_melhoria += 1
         convergencia = avaliacao(losses)
         if geracoes_sem_melhoria >= termo_parar and convergencia > max(
-            1 - taxa_mutacao, 1 / tamanho_populacao
+            1 - 1.2 * taxa_mutacao, 1 / tamanho_populacao
         ):
             print(convergencia)
             print(elitismo(matriz_alocacao, losses), menor_loss)
