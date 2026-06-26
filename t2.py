@@ -1,11 +1,11 @@
 import random
+import math
 import copy
 import sys
 from pathlib import Path
 
 caminho = Path(sys.argv[1])
 
-tamanho_populacao = 50
 
 matriz_escola_a = []
 matriz_escola_b = []
@@ -17,41 +17,50 @@ with open(caminho, "r") as f:
     for i in range(n):
         matriz_escola_b.append(list(map(int, f.readline().split()[1:])))
 
-lista = [i for i in range(1, n + 1)]
-lista2 = [i for i in range(1, n + 1)]
+rank_a = [[0] * (n + 1) for _ in range(n)]
+rank_b = [[0] * (n + 1) for _ in range(n)]
+
+for i in range(n):
+    for j, aluno in enumerate(matriz_escola_a[i]):
+        rank_a[i][aluno] = j
+
+for i in range(n):
+    for j, aluno in enumerate(matriz_escola_b[i]):
+        rank_b[i][aluno] = j
 
 
-def funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b):
-    losses = []
-    for alocacao in matriz_alocacao:
-        loss = 0
-        for aluno_a, aluno_b in alocacao:
-            loss += matriz_escola_a[aluno_a - 1].index(aluno_b)
-            loss += matriz_escola_b[aluno_b - 1].index(aluno_a)
-        losses.append(loss)
-    return losses
+tamanho_populacao = 50 * n
 
 
 matriz_alocacao = []
 for _ in range(tamanho_populacao):
-    lista = [i for i in range(1, n + 1)]
-    lista2 = [i for i in range(1, n + 1)]
     alocacao = []
     for i in range(n):
-        val1 = random.choice(lista)
-        lista.remove(val1)
-        val2 = random.choice(lista2)
-        lista2.remove(val2)
-        alocacao.append((val1, val2))
+        a = list(range(1, n + 1))
+        b = list(range(1, n + 1))
+
+        random.shuffle(a)
+        random.shuffle(b)
+
+        alocacao = list(zip(a, b))
     matriz_alocacao.append(alocacao)
+
+
+def funcao_heuristica(matriz_alocacao, rank_a, rank_b):
+    losses = []
+    for alocacao in matriz_alocacao:
+        loss = 0
+        for aluno_a, aluno_b in alocacao:
+            loss += rank_a[aluno_a - 1][aluno_b]
+            loss += rank_b[aluno_b - 1][aluno_a]
+        losses.append(loss)
+    return losses
 
 
 def mostrar(matriz_alocacao, losses):
     print()
-    new = copy.deepcopy(matriz_alocacao)
-    for i in range(len(losses)):
-        new[i].append(losses[i])
-        print(new[i])
+    for individuo, loss in zip(matriz_alocacao, losses):
+        print(individuo, loss)
 
 
 def elitismo(matriz_alocacao, losses):
@@ -61,37 +70,88 @@ def elitismo(matriz_alocacao, losses):
 
 
 def torneio(matriz_alocacao, losses):
-    lista = [i for i in range(0, tamanho_populacao)]
-    index1, index2 = random.sample(lista, 2)
-    if losses[index1] < losses[index2]:
-        return copy.deepcopy(matriz_alocacao[index1])
-    else:
-        return copy.deepcopy(matriz_alocacao[index2])
+    k = max(2, int(0.05 * tamanho_populacao))
+
+    indices = random.sample(range(tamanho_populacao), k)
+
+    melhor = min(indices, key=lambda i: losses[i])
+
+    return matriz_alocacao[melhor].copy()
 
 
-# Pensar com mais calma em como fazer o crossover
-# Crossover baseado no pmx
 def crossover(pai, mae):
-    x_pai = [i[0] for i in pai]
-    y_pai = [i[1] for i in pai]
-    x_mae = [i[0] for i in mae]
-    y_mae = [i[1] for i in mae]
-    val1, val2 = sorted(random.sample(range(0, n), 2))
+    """
+    Crossover baseado em matching (herda casais).
 
-    for i in range(val1, val2 + 1):
-        index_pai = x_pai.index(x_mae[i])
-        index_mae = x_mae.index(x_pai[i])
-        x_pai[i], x_pai[index_pai] = x_pai[index_pai], x_pai[i]
-        x_mae[i], x_mae[index_mae] = x_mae[index_mae], x_mae[i]
+    Cada indivíduo representa uma bijeção entre os alunos da escola A e da
+    escola B, isto é, um conjunto de pares (A,B).
 
-        index_pai = y_pai.index(y_mae[i])
-        index_mae = y_mae.index(y_pai[i])
-        y_pai[i], y_pai[index_pai] = y_pai[index_pai], y_pai[i]
-        y_mae[i], y_mae[index_mae] = y_mae[index_mae], y_mae[i]
+    O objetivo deste crossover é preservar esses pares bons
 
-    filho1 = list(zip(x_pai, y_pai))
-    filho2 = list(zip(x_mae, y_mae))
-    return filho1, filho2
+    Funcionamento:
+
+    1) Todos os casais presentes nos DOIS pais são copiados diretamente para o
+       filho. Como ambos os pais concordam nesses pares, eles provavelmente
+       representam boas soluções.
+
+    2) Para os demais alunos da escola A:
+          - escolhe aleatoriamente entre o parceiro do pai e da mãe;
+          - se esse parceiro ainda estiver livre, ele é utilizado;
+          - caso contrário, tenta utilizar o parceiro do outro pai;
+          - se ambos já estiverem ocupados, esse aluno fica pendente.
+
+    3) Após percorrer todos os alunos, alguns parceiros da escola B ainda
+       estarão livres. Eles são distribuídos aleatoriamente entre os alunos
+       pendentes.
+
+    O resultado final é sempre um matching válido (cada aluno aparece
+    exatamente uma vez em cada lado) e preserva muito mais informação útil
+    dos pais do que operadores como PMX.
+    """
+
+    mapa_pai = dict(pai)
+    mapa_mae = dict(mae)
+
+    filho = {}
+    usados_b = set()
+
+    for a in range(1, n + 1):
+        if mapa_pai[a] == mapa_mae[a]:
+            filho[a] = mapa_pai[a]
+            usados_b.add(mapa_pai[a])
+
+    pendentes = []
+
+    for a in range(1, n + 1):
+        if a in filho:
+            continue
+
+        b_pai = mapa_pai[a]
+        b_mae = mapa_mae[a]
+
+        if random.random() < 0.5:
+            primeira, segunda = b_pai, b_mae
+        else:
+            primeira, segunda = b_mae, b_pai
+
+        if primeira not in usados_b:
+            filho[a] = primeira
+            usados_b.add(primeira)
+
+        elif segunda not in usados_b:
+            filho[a] = segunda
+            usados_b.add(segunda)
+
+        else:
+            pendentes.append(a)
+
+    livres = [b for b in range(1, n + 1) if b not in usados_b]
+    random.shuffle(livres)
+
+    for a, b in zip(pendentes, livres):
+        filho[a] = b
+
+    return sorted(filho.items()), sorted(filho.items())
 
 
 def mutacao(alocacao):
@@ -104,8 +164,8 @@ def mutacao(alocacao):
     alocacao[idx2] = (aluno_a2, aluno_b1)
 
 
-def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
-    losses = funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b)
+def resolver(matriz_alocacao, rank_a, rank_b, chance_mutacao):
+    losses = funcao_heuristica(matriz_alocacao, rank_a, rank_b)
     new_matriz = copy.deepcopy(matriz_alocacao)
 
     melhor = elitismo(matriz_alocacao, losses)
@@ -127,39 +187,68 @@ def resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, chance_mutacao):
     return new_matriz
 
 
-# def avaliacao(matriz_alocacao, losses):
+def avaliacao(losses):
+    """
+    Retorna a porcentagem da população que é igual ao melhor
+    """
+    melhor = min(losses)
+    return sum(loss == melhor for loss in losses) / len(losses)
 
 
 if __name__ == "__main__":
-    geracaoes = 100
-    try:
-        modo = sys.argv[2]
-    except:
-        modo = ""
+    taxa_mutacao = 0.05
+    termo_parar = n**2
 
-    if modo == "pausado":
-        print("Geração 0:")
+    try:
+        pausar = sys.argv[2] == "pausado"
+    except:
+        pausar = False
+
+    try:
+        printar = sys.argv[3] != "sem_print"
+    except:
+        printar = True
+
+    i = 0
+    geracoes_sem_melhoria = 0
+    ultimo_melhor_resultado = math.inf
+
+    print("Geração 0:")
+    if printar:
         mostrar(
             matriz_alocacao,
-            funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
+            funcao_heuristica(matriz_alocacao, rank_a, rank_b),
         )
+
+    if pausar:
         input()
-        for i in range(1, geracaoes):
-            matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
-            print(f"Geração {i}:")
-            mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
-            print()
-            matriz_alocacao = matriz
+
+    while True:
+        matriz = resolver(matriz_alocacao, rank_a, rank_b, taxa_mutacao)
+        print(f"Geração {i}:")
+        losses = funcao_heuristica(matriz, rank_a, rank_b)
+
+        menor_loss = min(losses)
+        if printar:
+            mostrar(matriz, losses)
+        else:
+            print(menor_loss, avaliacao(losses))
+        print()
+
+        if menor_loss < ultimo_melhor_resultado:
+            ultimo_melhor_resultado = menor_loss
+            geracoes_sem_melhoria = 0
+        else:
+            geracoes_sem_melhoria += 1
+        convergencia = avaliacao(losses)
+        if geracoes_sem_melhoria >= termo_parar and convergencia > max(
+            1 - taxa_mutacao, 1 / tamanho_populacao
+        ):
+            print(convergencia)
+            print(elitismo(matriz_alocacao, losses), menor_loss)
+            break
+
+        matriz_alocacao = matriz
+        if pausar:
             input()
-    else:
-        print("Geração 0:")
-        mostrar(
-            matriz_alocacao,
-            funcao_heuristica(matriz_alocacao, matriz_escola_a, matriz_escola_b),
-        )
-        for i in range(1, geracaoes):
-            matriz = resolver(matriz_alocacao, matriz_escola_a, matriz_escola_b, 0.1)
-            print(f"Geração {i}:")
-            mostrar(matriz, funcao_heuristica(matriz, matriz_escola_a, matriz_escola_b))
-            print()
-            matriz_alocacao = matriz
+        i += 1
