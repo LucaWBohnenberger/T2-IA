@@ -82,72 +82,60 @@ def torneio(matriz_alocacao, losses):
 def crossover(pai, mae):
     """
     Crossover baseado em matching (herda casais).
-
-    Cada indivíduo representa uma bijeção entre os alunos da escola A e da
-    escola B, isto é, um conjunto de pares (A,B).
-
-    O objetivo deste crossover é preservar esses pares bons
-
-    Funcionamento:
-
-    1) Todos os casais presentes nos DOIS pais são copiados diretamente para o
-       filho. Como ambos os pais concordam nesses pares, eles provavelmente
-       representam boas soluções.
-
-    2) Para os demais alunos da escola A:
-          - escolhe aleatoriamente entre o parceiro do pai e da mãe;
-          - se esse parceiro ainda estiver livre, ele é utilizado;
-          - caso contrário, tenta utilizar o parceiro do outro pai;
-          - se ambos já estiverem ocupados, esse aluno fica pendente.
-
-    3) Após percorrer todos os alunos, alguns parceiros da escola B ainda
-       estarão livres. Eles são distribuídos aleatoriamente entre os alunos
-       pendentes.
+    Gera DOIS filhos distintos aproveitando o fator estocástico da seleção.
     """
-
     mapa_pai = dict(pai)
     mapa_mae = dict(mae)
 
-    filho = {}
-    usados_b = set()
+    def gerar_filho():
+        filho = {}
+        usados_b = set()
 
-    for a in range(1, n + 1):
-        if mapa_pai[a] == mapa_mae[a]:
-            filho[a] = mapa_pai[a]
-            usados_b.add(mapa_pai[a])
+        # 1) O Consenso: Herda casais em comum
+        for a in range(1, n + 1):
+            if mapa_pai[a] == mapa_mae[a]:
+                filho[a] = mapa_pai[a]
+                usados_b.add(mapa_pai[a])
 
-    pendentes = []
+        pendentes = []
 
-    for a in range(1, n + 1):
-        if a in filho:
-            continue
+        # 2) A Divergência: Escolha aleatória entre pai e mãe
+        for a in range(1, n + 1):
+            if a in filho:
+                continue
 
-        b_pai = mapa_pai[a]
-        b_mae = mapa_mae[a]
+            b_pai = mapa_pai[a]
+            b_mae = mapa_mae[a]
 
-        if random.random() < 0.5:
-            primeira, segunda = b_pai, b_mae
-        else:
-            primeira, segunda = b_mae, b_pai
+            # Joga a moeda para decidir qual pai tentar primeiro neste gene
+            if random.random() < 0.5:
+                primeira, segunda = b_pai, b_mae
+            else:
+                primeira, segunda = b_mae, b_pai
 
-        if primeira not in usados_b:
-            filho[a] = primeira
-            usados_b.add(primeira)
+            if primeira not in usados_b:
+                filho[a] = primeira
+                usados_b.add(primeira)
+            elif segunda not in usados_b:
+                filho[a] = segunda
+                usados_b.add(segunda)
+            else:
+                pendentes.append(a)
 
-        elif segunda not in usados_b:
-            filho[a] = segunda
-            usados_b.add(segunda)
+        # 3) O Reparo: Distribuição aleatória para os alunos sem par
+        livres = [b for b in range(1, n + 1) if b not in usados_b]
+        random.shuffle(livres)
 
-        else:
-            pendentes.append(a)
+        for a, b in zip(pendentes, livres):
+            filho[a] = b
 
-    livres = [b for b in range(1, n + 1) if b not in usados_b]
-    random.shuffle(livres)
+        return sorted(filho.items())
 
-    for a, b in zip(pendentes, livres):
-        filho[a] = b
+    # Gera dois filhos independentes
+    filho1 = gerar_filho()
+    filho2 = gerar_filho()
 
-    return sorted(filho.items()), sorted(filho.items())
+    return filho1, filho2
 
 
 def mutacao(alocacao):
