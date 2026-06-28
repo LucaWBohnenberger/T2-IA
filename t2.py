@@ -29,7 +29,7 @@ for i in range(n):
         rank_b[i][aluno] = j
 
 
-tamanho_populacao = 75 * n
+tamanho_populacao = n * 75
 
 
 matriz_alocacao = []
@@ -193,7 +193,7 @@ def avaliacao(losses):
 
 if __name__ == "__main__":
     taxa_mutacao = 0.05
-    termo_parar = n**2
+    termo_parar = n * 5
 
     try:
         pausar = sys.argv[2] == "pausado"
